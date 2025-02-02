@@ -30,6 +30,11 @@ variable "vms" {
       vmid            = 1005, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 2048,
       floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 20
     }
+    "docker-compose-server" = {
+      vmid            = 1006, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 8192,
+      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 30
+    }
+
   }
 }
 
@@ -96,5 +101,5 @@ variable "snippets" {
 
 variable "tags" {
   description = "The tags to associate with the template"
-  default = ["cloudinit", "ubuntu", "noble-numbat", "terraform-generated"]
+  default     = ["cloudinit", "ubuntu", "noble-numbat", "terraform-generated"]
 }

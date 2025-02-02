@@ -9,6 +9,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   for_each = var.vms
 
+
   name        = each.key
   description = "Based on: ${var.cloud_image}"
   node_name   = var.proxmox_node
@@ -41,7 +42,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   cpu {
     cores = each.value.cores
     numa  = true
-    type  = "x86-64-v2-AES"  # recommended for modern CPUs
+    type  = "x86-64-v2-AES" # recommended for modern CPUs
   }
 
   # set equal to dedicated to enable ballooning
@@ -97,6 +98,13 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   keyboard_layout = "en-gb"
   template        = var.is_template
 
+  lifecycle {
+    ignore_changes = [
+      disk[0].file_id,
+      initialization[0].user_data_file_id
+    ]
+  }
+
 }
 
 resource "proxmox_virtual_environment_file" "metadata_cloud_config" {
@@ -141,6 +149,8 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
 
     runcmd:
       - apt update
+      - apt full-upgrade -y  # Ensures all packages are upgraded
+      - apt autoremove -y    # Cleans up unnecessary dependencies      
       - apt install -y qemu-guest-agent net-tools avahi-daemon
       - timedatectl set-timezone $var.timezone
       - systemctl enable ssh
