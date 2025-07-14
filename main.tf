@@ -159,7 +159,7 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
       # Disk Configuration and Formatting
       - |
         DISK="/dev/sdb"
-        MOUNT_POINT="/mnt/data"
+        MOUNT_POINT="/data"
 
         echo "Starting disk setup for $DISK"
 

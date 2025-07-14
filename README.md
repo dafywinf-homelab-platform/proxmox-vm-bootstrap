@@ -231,7 +231,122 @@ The **Cloud-Init script** (`user_data_cloud_config.yaml`) includes a setup to co
 
 ---
 
-### **Key Notes**
+## 📦 Resizing VM Disks via Terraform and Guest OS Commands
+
+This section documents how to increase the size of VM disks managed via Terraform in Proxmox, and how to apply those changes inside the guest VM (e.g. Ubuntu).
+
+---
+
+### ✏️ Step 1 – Update Disk Size in `variables.tf`
+
+To increase disk size, update the `scsi1_size_gb` value for the target VM in your `variables.tf` file.
+
+**Example:**
+
+```hcl
+"k3s-worker-1" = {
+  vmid            = 1004,
+  ipv4_address    = "dhcp",
+  ipv4_gateway    = "",
+  cores           = 3,
+  dedicated_memory = 8192,
+  floating_memory  = 2048,
+  scsi0_size_gb   = 32,
+  scsi1_size_gb   = 250  # <- updated from 20 to 250
+}
+```
+
+---
+
+### ⚙️ Step 2 – Apply the Terraform Change
+
+Run:
+
+```bash
+terraform apply -var-file="secrets.tfvars"
+```
+
+> Note: Terraform updates the **virtual disk size in Proxmox**, but **does not modify the partition or filesystem inside the guest**. This must be done manually (next step).
+
+---
+
+### 🧰 Step 3 – Resize the Partition and Filesystem in the Guest VM
+
+SSH into the VM and perform the following steps:
+
+#### 1. Verify disk size before resizing
+
+```bash
+lsblk -b /dev/sdb
+```
+
+You should see the new disk size (e.g. `268435456000` bytes = 250 GB), but the partition `/dev/sdb1` will still be small (e.g. 20 GB).
+
+---
+
+#### 2. Resize the partition to fill the disk
+
+```bash
+sudo growpart /dev/sdb 1
+```
+
+Example output:
+
+```
+CHANGED: partition=1 start=2048 old: size=41938944 end=41940991 new: size=524285919 end=524287966
+```
+
+---
+
+#### 3. Resize the filesystem (ext4)
+
+```bash
+sudo resize2fs /dev/sdb1
+```
+
+Expected output:
+
+```
+Filesystem at /dev/sdb1 is mounted on /mnt/data; on-line resizing required
+The filesystem on /dev/sdb1 is now XXXXXXXX blocks long.
+```
+
+---
+
+#### 4. Confirm the change
+
+```bash
+df -h /mnt/data
+```
+
+Example:
+
+```
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdb1       246G  6.0G  240G   3% /mnt/data
+```
+
+### 📎 Notes
+
+* These steps assume:
+
+   * The data disk is attached as `scsi1`, mapped to `/dev/sdb`.
+   * The filesystem is `ext4`.
+   * The partition is `/dev/sdb1` and is mounted at `/mnt/data`.
+
+* Ensure these tools are installed:
+
+  ```bash
+  sudo apt install -y cloud-guest-utils e2fsprogs
+  ```
+
+* If using `xfs`, replace `resize2fs` with `xfs_growfs`.
+
+---
+
+
+
+# **Supporting Notes**
 
 ✅ The **primary disk (`scsi0`)** is used for the OS and booting.  
 ✅ The **secondary disk (`scsi1`)** is configured for additional storage and auto-mounted at `/mnt/data`.  

@@ -12,28 +12,37 @@ variable "vms" {
   default = {
     "k3s-master-1" = {
       vmid            = 1001, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 2048,
-      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 20
+      floating_memory = 2048, scsi0_size_gb = 32, scsi1_size_gb = 5
     }
     "k3s-master-2" = {
       vmid            = 1002, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 2048,
-      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 20
+      floating_memory = 2048, scsi0_size_gb = 32, scsi1_size_gb = 5
     }
     "k3s-master-3" = {
       vmid            = 1003, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 2048,
-      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 20
+      floating_memory = 2048, scsi0_size_gb = 32, scsi1_size_gb = 5
     }
     "k3s-worker-1" = {
-      vmid            = 1004, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 2048,
-      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 20
+      vmid            = 1004, ipv4_address = "dhcp", ipv4_gateway = "", cores = 3, dedicated_memory = 8192,
+      floating_memory = 2048, scsi0_size_gb = 32, scsi1_size_gb = 250
     }
     "k3s-worker-2" = {
-      vmid            = 1005, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 2048,
-      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 20
+      vmid            = 1005, ipv4_address = "dhcp", ipv4_gateway = "", cores = 3, dedicated_memory = 8192,
+      floating_memory = 2048, scsi0_size_gb = 32, scsi1_size_gb = 250
     }
-    "docker-compose-server" = {
+    "monitoring-server" = {
       vmid            = 1006, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 8192,
       floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 30
     }
+    "confluence-server" = {
+      vmid            = 1007, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 8192,
+      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 30
+    }
+
+    # "octostar-installation-server" = {
+    #   vmid            = 1008, ipv4_address = "dhcp", ipv4_gateway = "", cores = 4, dedicated_memory = 16384,
+    #   floating_memory = 2048, scsi0_size_gb = 50, scsi1_size_gb = 30
+    # }
 
   }
 }
