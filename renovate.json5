@@ -3,49 +3,52 @@
   "extends": [
     "config:recommended",
     ":semanticCommits",
-    ":prHourlyLimit10",
-    ":prConcurrentLimit5",
     ":timezone(Europe/London)"
   ],
 
-  "enabledManagers": ["regex"],
+  "prHourlyLimit": 10,
   "labels": ["dependencies", "docker", "renovate"],
   "dependencyDashboard": true,
   "rebaseWhen": "behind-base-branch",
   "rangeStrategy": "replace",
 
   // Weekly maintenance window: Sundays 03:00–05:00 UK time
-  "schedule": ["after 3:00 on Sunday and before 5:00 on Sunday"],
+  "schedule": ["* 3-4 * * 0"],
 
   "packageRules": [
     {
-      // Keep safe bumps seamless
       "matchDatasources": ["docker"],
       "groupName": "Makefile toolchain images",
       "matchUpdateTypes": ["patch", "minor"],
       "automerge": true,
       "automergeType": "pr",
-      // Ensure grouped PRs respect the same window
-      "schedule": ["after 3:00 on Sunday and before 5:00 on Sunday"]
+      "schedule": ["* 3-4 * * 0"]
     }
   ],
 
-  "regexManagers": [
+  "enabledManagers": ["custom.regex"],
+  "customManagers": [
     {
+      "customType": "regex",
       "description": "Makefile: variable assignments holding Docker images",
-      "fileMatch": ["^Makefile$"],
+      "managerFilePatterns": ["/^Makefile$/"],
       "matchStrings": [
-        "(?:^|\\s)[A-Z_]+\\s*(?:\\?|:)?=\\s*(?<depName>[-\\w./]+):(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)\\b"
+        // start-of-file OR newline, optional indent, VAR ?= repo/name:TAG
+        "(?:^|\\n)[^\\S\\n]*[A-Z0-9_]+\\s*(?:\\?|:)?=\\s*(?<depName>[-\\w./]+):(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)\\b"
       ],
-      "datasourceTemplate": "docker"
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     },
     {
+      "customType": "regex",
       "description": "Makefile: images used directly in docker run lines",
-      "fileMatch": ["^Makefile$"],
+      "managerFilePatterns": ["/^Makefile$/"],
       "matchStrings": [
-        "docker\\s+run[\\s\\S]*?\\s(?<depName>[-\\w./]+):(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)\\b"
+        // start-of-file OR newline, then a docker run ... repo/name:TAG
+        "(?:^|\\n)[\\s\\S]*?docker\\s+run[\\s\\S]*?\\s(?<depName>[-\\w./]+):(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)\\b"
       ],
-      "datasourceTemplate": "docker"
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     }
   ]
 }

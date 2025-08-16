@@ -1,8 +1,9 @@
 # ---- Tool images (pin versions for reproducibility)
-TF_IMAGE        ?= hashicorp/terraform:latest
-TFLINT_IMAGE    ?= ghcr.io/terraform-linters/tflint:latest
-TFSEC_IMAGE     ?= aquasec/tfsec:latest
-SHELLCHECK_IMAGE?= koalaman/shellcheck:latest
+TF_IMAGE         ?= hashicorp/terraform:1.8.3
+TFLINT_IMAGE     ?= ghcr.io/terraform-linters/tflint:v0.58.0
+TFSEC_IMAGE      ?= aquasec/tfsec:v1.28.13
+SHELLCHECK_IMAGE ?= koalaman/shellcheck:v0.11.0
+
 
 # ---- Container runtime (Docker or Podman)
 DOCKER ?= docker
