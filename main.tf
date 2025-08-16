@@ -15,6 +15,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   node_name   = var.proxmox_node
   vm_id       = each.value.vmid
   tags        = var.tags
+  started     = each.value.started
 
   initialization {
     dns {
@@ -89,6 +90,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     type = "serial0"
   }
 
+
   agent {
     enabled = true
     trim    = true
@@ -137,9 +139,11 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
     autoinstall:
       version: 1
 
+    timezone: ${var.timezone}
+
     users:
       - default
-      - name: ubuntu
+      - name: ${var.user}
         groups:
           - sudo
         shell: /bin/bash
@@ -152,7 +156,6 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
       - apt full-upgrade -y  # Ensures all packages are upgraded
       - apt autoremove -y    # Cleans up unnecessary dependencies      
       - apt install -y qemu-guest-agent net-tools avahi-daemon
-      - timedatectl set-timezone $var.timezone
       - systemctl enable ssh
       - systemctl enable avahi-daemon
 

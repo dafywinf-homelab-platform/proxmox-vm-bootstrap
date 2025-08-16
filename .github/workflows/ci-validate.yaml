@@ -1,0 +1,42 @@
+name: CI - Validate
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Optional: login to GHCR to avoid anonymous rate limits
+#      - name: Login to GHCR
+#        if: ${{ !cancelled() }}
+#        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Show Docker info
+        run: docker info
+
+      # If you ever want CI to force a specific image tag, uncomment and set here:
+      # - name: Run validate with pinned images
+      #   run: |
+      #     make \
+      #       TF_IMAGE=hashicorp/terraform:1.8.5 \
+      #       TFLINT_IMAGE=ghcr.io/terraform-linters/tflint:v0.58.1 \
+      #       TFSEC_IMAGE=aquasec/tfsec:v1.28.12 \
+      #       SHELLCHECK_IMAGE=koalaman/shellcheck:v0.10.0 \
+      #       validate
+
+      - name: Run validate (Makefile)
+        run: make validate

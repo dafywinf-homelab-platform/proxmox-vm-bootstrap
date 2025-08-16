@@ -1,3 +1,32 @@
+# Proxmox VM Bootstrap
+
+[![CI - Validate](https://github.com/dafywinf-homelab-platform/proxmox-vm-bootstrap/actions/workflows/ci-validate.yaml/badge.svg)](https://github.com/dafywinf-homelab-platform/proxmox-vm-bootstrap/actions/workflows/ci-validate.yaml)
+
+This repository provides an infrastructure-as-code framework for bootstrapping virtual machines on Proxmox using
+Terraform. It automates the creation of cloud-init enabled Ubuntu templates and VM instances, including configuration of
+CPU, memory, disks, networking, and optional additional storage. The setup ensures reproducible builds with linting and
+security checks via a Dockerised Makefile toolchain, and integrates with GitHub Actions and Dependabot for automated
+validation and dependency management.
+
+## VM Definitions
+
+All virtual machines are defined centrally in the [`variables.tf`](./variables.tf) file under the `vms` variable.
+This map specifies the configuration for each VM — including CPU, memory, disk sizes, networking, and whether the VM
+should be started automatically.
+
+The default configuration provided in this repository reflects **my personal homelab environment**, which is primarily
+geared towards deploying and experimenting with **Kubernetes (K3s)** clusters. Out of the box, the `vms` variable
+includes definitions for:
+
+* A set of **K3s master nodes**
+* A set of **K3s worker nodes**
+* Supporting infrastructure VMs (e.g. monitoring, collaboration tools)
+
+You can freely adjust the `vms` map to match your own lab or production requirements, adding or removing hosts as
+needed.
+
+---
+
 # Pre-Conditions
 
 ### Create Secret for Proxmox Password
@@ -58,16 +87,18 @@ issue: https://github.com/bpg/terraform-provider-proxmox/issues/1610.
 
 # Adding a new Host 🔥
 
-The hosts that are deployed is driven be the variable `vms` found in `variables.tf`. To add a host update this data structure.
+The hosts that are deployed is driven be the variable `vms` found in `variables.tf`. To add a host update this data
+structure.
 
 ```js
-  default = {
+  default
+= {
 
     "docker-compose-server" = {
-      vmid            = 1006, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 8192,
-      floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 0
+        vmid = 1006, ipv4_address = "dhcp", ipv4_gateway = "", cores = 2, dedicated_memory = 8192,
+        floating_memory = 2048, scsi0_size_gb = 10, scsi1_size_gb = 0
     }
-  }
+}
 ```
 
 ## **VM Configuration: `docker-compose-server`**
@@ -83,8 +114,8 @@ The hosts that are deployed is driven be the variable `vms` found in `variables.
 
 - **CPU:** `2 cores`
 - **Memory:**
-  - **Dedicated:** `8GB (8192MB)`
-  - **Floating:** `2GB (2048MB)` (Ballooning enabled)
+    - **Dedicated:** `8GB (8192MB)`
+    - **Floating:** `2GB (2048MB)` (Ballooning enabled)
 
 ### **Storage**
 
@@ -105,7 +136,8 @@ The hosts that are deployed is driven be the variable `vms` found in `variables.
 - **Proxmox Guest Agent:** Enabled (`agent { enabled = true }`)
 - **Disk TRIM (Discard):** Enabled for storage efficiency
 
-This setup defines a lightweight, dynamically allocated VM suitable for **Docker Compose workloads**, with mDNS access via `docker-compose-server.local`. 🚀
+This setup defines a lightweight, dynamically allocated VM suitable for **Docker Compose workloads**, with mDNS access
+via `docker-compose-server.local`. 🚀
 
 <br/>
 
@@ -121,7 +153,8 @@ terraform apply -var-file="secrets.tfvars" --auto-approve
 
 # Accessing Servers
 
-The created hosts will be available on the local network via `<hostname>.local` where the hostname is the key in the vms map. Your public key (setup as a pre-condition) is automatically added to each host.
+The created hosts will be available on the local network via `<hostname>.local` where the hostname is the key in the vms
+map. Your public key (setup as a pre-condition) is automatically added to each host.
 
 ```
  ➜  proxmox-infrastructure git:(main) ✗ ssh ubuntu@docker-compose-server.local
@@ -183,7 +216,92 @@ Remove the ssh key from hosts.
 ssh-keygen -R docker-compose-server.local
 ```
 
-<br/>
+
+
+# 🛠 Development & CI Tooling
+
+This repository includes tooling to make working with Terraform and shell scripts reproducible and consistent across
+environments.
+
+## Makefile
+
+A **Makefile** is provided to standardise common developer tasks. Instead of installing Terraform, TFLint, tfsec, or
+ShellCheck locally, these are run inside pinned Docker containers.
+
+### Available targets
+
+```sh
+make help
+```
+
+Outputs:
+
+* `make validate` → runs fmt, validate, tflint, tfsec, and shellcheck
+* `make fmt` → check Terraform formatting
+* `make init` → initialise Terraform (no backend)
+* `make validate-tf` → run Terraform validate
+* `make tflint` → run TFLint rules
+* `make tfsec` → run tfsec (soft-fail by default)
+* `make shellcheck` → run ShellCheck against `*.sh` files
+* `make clean` → remove `.terraform` and lock files
+
+Because all tooling runs in Docker containers with pinned versions, developers and CI runners will always use the same
+versions.
+
+### Example usage
+
+```sh
+make validate
+```
+
+---
+
+## GitHub Actions Integration
+
+This repository includes a GitHub Actions workflow that automatically runs the Makefile validation steps.
+
+* **When it runs**
+
+    * On every pull request
+    * On pushes to `main`
+    * On a weekly schedule (Monday at 06:00 UTC)
+
+* **What it does**
+
+    * Checks out the repo
+    * Logs into GHCR (for pulling tool images)
+    * Runs `make validate` to ensure:
+
+        * Terraform is correctly formatted and validates
+        * TFLint rules pass
+        * tfsec security scan passes
+        * Shell scripts pass ShellCheck
+
+Results are visible in the **Actions** tab of the repository.
+
+---
+
+## Dependabot
+
+Dependabot is enabled to keep dependencies up to date:
+
+* **Terraform providers and modules**
+* **GitHub Actions workflows**
+* **Dockerfiles** (if you add any later)
+
+Dependabot automatically raises pull requests when new versions are available. You can review and merge them to stay
+current.
+
+---
+
+✅ **Summary**:
+
+* Use the **Makefile** locally for consistent tooling.
+* GitHub Actions automatically runs these checks on PRs and pushes.
+* Dependabot keeps providers and GitHub Actions up to date.
+
+---
+
 
 # Design Notes 🤓
 
@@ -195,24 +313,24 @@ This Terraform configuration provisions a **Proxmox virtual machine** with the f
 
 1. **Primary Disk (`scsi0`)**
 
-   - **Purpose:** Boot disk containing the **Ubuntu cloud image**.
-   - **Size:** Defined in `each.value.scsi0_size_gb`.
-   - **Source:** Downloads the cloud image from `var.cloud_image`.
-   - **Filesystem:** Determined by the Ubuntu cloud image.
-   - **Storage Location:** Stored in `var.storage`.
+    - **Purpose:** Boot disk containing the **Ubuntu cloud image**.
+    - **Size:** Defined in `each.value.scsi0_size_gb`.
+    - **Source:** Downloads the cloud image from `var.cloud_image`.
+    - **Filesystem:** Determined by the Ubuntu cloud image.
+    - **Storage Location:** Stored in `var.storage`.
 
 2. **Secondary Disk (`scsi1`)**
 
-   - **Purpose:** Additional data storage.
-   - **Size:** Defined in `each.value.scsi1_size_gb`.
-   - **Format:** **Raw disk** (`file_format = "raw"`).
-   - **Storage Location:** Stored in `var.storage`.
-   - **Filesystem:** Initially unformatted, but configured in **Cloud-Init**.
+    - **Purpose:** Additional data storage.
+    - **Size:** Defined in `each.value.scsi1_size_gb`.
+    - **Format:** **Raw disk** (`file_format = "raw"`).
+    - **Storage Location:** Stored in `var.storage`.
+    - **Filesystem:** Initially unformatted, but configured in **Cloud-Init**.
 
 3. **EFI Disk (`efi_disk`)**
-   - **Purpose:** Required for UEFI boot.
-   - **Storage Location:** Stored in `var.storage`.
-   - **Size:** Managed automatically by Proxmox.
+    - **Purpose:** Required for UEFI boot.
+    - **Storage Location:** Stored in `var.storage`.
+    - **Size:** Managed automatically by Proxmox.
 
 ---
 
@@ -222,9 +340,9 @@ The **Cloud-Init script** (`user_data_cloud_config.yaml`) includes a setup to co
 
 1. **Checks for the existence of `/dev/sdb`** (Secondary Disk).
 2. **Formats the disk** with the following setup:
-   - **Partition Table:** GPT
-   - **Partition Type:** Primary
-   - **Filesystem:** ext4
+    - **Partition Table:** GPT
+    - **Partition Type:** Primary
+    - **Filesystem:** ext4
 3. **Creates a mount point at `/mnt/data`**.
 4. **Updates `/etc/fstab`** to persist the mount across reboots.
 5. **Mounts the disk automatically** at `/mnt/data`.
@@ -233,7 +351,8 @@ The **Cloud-Init script** (`user_data_cloud_config.yaml`) includes a setup to co
 
 ## 📦 Resizing VM Disks via Terraform and Guest OS Commands
 
-This section documents how to increase the size of VM disks managed via Terraform in Proxmox, and how to apply those changes inside the guest VM (e.g. Ubuntu).
+This section documents how to increase the size of VM disks managed via Terraform in Proxmox, and how to apply those
+changes inside the guest VM (e.g. Ubuntu).
 
 ---
 
@@ -245,14 +364,14 @@ To increase disk size, update the `scsi1_size_gb` value for the target VM in you
 
 ```hcl
 "k3s-worker-1" = {
-  vmid            = 1004,
-  ipv4_address    = "dhcp",
-  ipv4_gateway    = "",
-  cores           = 3,
+  vmid             = 1004,
+  ipv4_address     = "dhcp",
+  ipv4_gateway     = "",
+  cores            = 3,
   dedicated_memory = 8192,
   floating_memory  = 2048,
-  scsi0_size_gb   = 32,
-  scsi1_size_gb   = 250  # <- updated from 20 to 250
+  scsi0_size_gb    = 32,
+  scsi1_size_gb    = 250  # <- updated from 20 to 250
 }
 ```
 
@@ -266,7 +385,8 @@ Run:
 terraform apply -var-file="secrets.tfvars"
 ```
 
-> Note: Terraform updates the **virtual disk size in Proxmox**, but **does not modify the partition or filesystem inside the guest**. This must be done manually (next step).
+> Note: Terraform updates the **virtual disk size in Proxmox**, but **does not modify the partition or filesystem inside
+the guest**. This must be done manually (next step).
 
 ---
 
@@ -280,7 +400,8 @@ SSH into the VM and perform the following steps:
 lsblk -b /dev/sdb
 ```
 
-You should see the new disk size (e.g. `268435456000` bytes = 250 GB), but the partition `/dev/sdb1` will still be small (e.g. 20 GB).
+You should see the new disk size (e.g. `268435456000` bytes = 250 GB), but the partition `/dev/sdb1` will still be
+small (e.g. 20 GB).
 
 ---
 
@@ -330,9 +451,9 @@ Filesystem      Size  Used Avail Use% Mounted on
 
 * These steps assume:
 
-   * The data disk is attached as `scsi1`, mapped to `/dev/sdb`.
-   * The filesystem is `ext4`.
-   * The partition is `/dev/sdb1` and is mounted at `/mnt/data`.
+    * The data disk is attached as `scsi1`, mapped to `/dev/sdb`.
+    * The filesystem is `ext4`.
+    * The partition is `/dev/sdb1` and is mounted at `/mnt/data`.
 
 * Ensure these tools are installed:
 
@@ -342,7 +463,6 @@ Filesystem      Size  Used Avail Use% Mounted on
 
 * If using `xfs`, replace `resize2fs` with `xfs_growfs`.
 
----
 
 
 
@@ -353,7 +473,8 @@ Filesystem      Size  Used Avail Use% Mounted on
 ✅ **EFI disk** is required for UEFI-based VM booting.  
 ✅ **Cloud-Init ensures secondary disk is formatted and mounted** on first boot.
 
-This setup provides a **clean separation between the OS and additional storage**, ensuring flexibility for future disk expansions.
+This setup provides a **clean separation between the OS and additional storage**, ensuring flexibility for future disk
+expansions.
 
 ## Why Install mDNS (Avahi) on Your Server?
 
@@ -375,9 +496,12 @@ ssh ubuntu@docker-compose-server.local
 
 ### **Why Ignoring `disk[0].file_id` is Necessary**
 
-In this Terraform Proxmox configuration, a **cloud image** is downloaded and attached to VMs as their primary disk (`scsi0`). The issue arises when the cloud image (`proxmox_virtual_environment_download_file.ubuntu_cloud_image`) is **updated or changed**.
+In this Terraform Proxmox configuration, a **cloud image** is downloaded and attached to VMs as their primary disk (
+`scsi0`). The issue arises when the cloud image (`proxmox_virtual_environment_download_file.ubuntu_cloud_image`) is *
+*updated or changed**.
 
-If Terraform detects a change in `file_id` (which happens when the image URL is updated), it will trigger a **recreation** of all VMs using this image. This is undesirable because:
+If Terraform detects a change in `file_id` (which happens when the image URL is updated), it will trigger a **recreation
+** of all VMs using this image. This is undesirable because:
 
 - **Terraform will attempt to destroy and recreate most VMs**, leading to unnecessary downtime.
 - **Existing workloads could be lost** if not backed up.
@@ -406,3 +530,6 @@ lifecycle {
   ignore_changes = [disk[0].file_id]
 }
 ```
+
+
+
