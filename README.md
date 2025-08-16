@@ -25,6 +25,36 @@ includes definitions for:
 You can freely adjust the `vms` map to match your own lab or production requirements, adding or removing hosts as
 needed.
 
+
+Ah got it 👍 — you want a proper **README section** (like the others you’ve got). Here’s a draft you can drop in after your intro but before *Pre-Conditions*:
+
+---
+
+# Repository Overview 📂
+
+This repository provides an **infrastructure-as-code workflow** for bootstrapping VMs on Proxmox using Terraform, with opinionated defaults tailored to a homelab Kubernetes (K3s) environment.
+
+### Structure
+
+* **`variables.tf`**
+  Contains the central `vms` map, which defines all VM instances (masters, workers, supporting services). This is the main file to edit when adding or changing hosts.
+
+* **`main.tf` & supporting `.tf` files**
+  Terraform resources that describe how Proxmox VMs are created, initialised with Cloud-Init, and configured with disks, networking, and metadata.
+
+* **`Makefile`**
+  Provides a reproducible toolchain for Terraform formatting, validation, linting, security scanning, and shell script checks — all run inside Docker containers with pinned versions.
+
+* **`.github/workflows/`**
+  GitHub Actions workflows that automatically run the Makefile validation in CI on pushes, pull requests, and weekly scheduled runs.
+
+* **`.github/dependabot.yml`**
+  Dependabot configuration that keeps Terraform providers and GitHub Actions dependencies up to date by raising pull requests.
+
+### Defaults
+
+The default VM definitions in `variables.tf` reflect **my personal homelab**, with a focus on standing up a lightweight Kubernetes cluster using **K3s**. These can be adapted to your own environment by editing the `vms` map.
+
 ---
 
 # Pre-Conditions

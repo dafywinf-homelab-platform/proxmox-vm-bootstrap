@@ -1,0 +1,51 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":prHourlyLimit10",
+    ":prConcurrentLimit5",
+    ":timezone(Europe/London)"
+  ],
+
+  "enabledManagers": ["regex"],
+  "labels": ["dependencies", "docker", "renovate"],
+  "dependencyDashboard": true,
+  "rebaseWhen": "behind-base-branch",
+  "rangeStrategy": "replace",
+
+  // Weekly maintenance window: Sundays 03:00–05:00 UK time
+  "schedule": ["after 3:00 on Sunday and before 5:00 on Sunday"],
+
+  "packageRules": [
+    {
+      // Keep safe bumps seamless
+      "matchDatasources": ["docker"],
+      "groupName": "Makefile toolchain images",
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      // Ensure grouped PRs respect the same window
+      "schedule": ["after 3:00 on Sunday and before 5:00 on Sunday"]
+    }
+  ],
+
+  "regexManagers": [
+    {
+      "description": "Makefile: variable assignments holding Docker images",
+      "fileMatch": ["^Makefile$"],
+      "matchStrings": [
+        "(?:^|\\s)[A-Z_]+\\s*(?:\\?|:)?=\\s*(?<depName>[-\\w./]+):(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)\\b"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Makefile: images used directly in docker run lines",
+      "fileMatch": ["^Makefile$"],
+      "matchStrings": [
+        "docker\\s+run[\\s\\S]*?\\s(?<depName>[-\\w./]+):(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)\\b"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}
