@@ -1,0 +1,39 @@
+name: Renovate Config - Validate
+
+on:
+  pull_request:
+    paths:
+      - 'Makefile'
+      - 'renovate.json*'
+  push:
+    branches: [ main ]
+    paths:
+      - 'Makefile'
+      - 'renovate.json*'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run Renovate (local mode)
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -e LOG_LEVEL=debug \
+            -v "$PWD":/repo -w /repo \
+            renovate/renovate --platform=local > renovate.log 2>&1 || {
+              echo "Renovate exited with error"; tail -n +1 renovate.log; exit 1;
+            }
+
+      - name: Fail if no dependencies were extracted
+        run: |
+          set -euo pipefail
+          if grep -q 'Found 0 package file(s)' renovate.log; then
+            echo "::error::Renovate detected zero dependencies — Makefile regex likely broken."
+            sed -n '1,200p' renovate.log || true
+            exit 1
+          fi
